@@ -1,7 +1,7 @@
 using FinTrack.Api.Composition;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddFinTrackApi();
+builder.Services.AddFinTrackApi(builder.Configuration);
 
 var app = builder.Build();
 

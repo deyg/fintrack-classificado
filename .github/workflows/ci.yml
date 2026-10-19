@@ -44,8 +44,8 @@ jobs:
       - name: Build
         run: dotnet build FinTrack.sln -c Release --no-restore
 
-      - name: Test (inclui ArchitectureTests)
-        run: dotnet test FinTrack.sln -c Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory artifacts/test-results
+      - name: Test (inclui ArchitectureTests; IntegrationTests rodam no job sql-server)
+        run: dotnet test FinTrack.sln -c Release --no-build --filter "FullyQualifiedName!~IntegrationTests" --logger "trx;LogFileName=test-results.trx" --results-directory artifacts/test-results
 
       - name: Publicar resultados de teste
         if: always()
@@ -76,6 +76,13 @@ jobs:
       - name: Probe de conectividade
         shell: pwsh
         run: ./scripts/probe-sqlserver.ps1
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: IntegrationTests contra SQL Server real (G5)
+        run: dotnet test FinTrack.sln -c Release --filter "FullyQualifiedName~IntegrationTests"
 
       - name: Derrubar ambiente
         if: always()

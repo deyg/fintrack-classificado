@@ -1,10 +1,12 @@
 using FinTrack.Api.Errors;
+using FinTrack.Application;
+using FinTrack.Infrastructure;
 
 namespace FinTrack.Api.Composition;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddFinTrackApi(this IServiceCollection services)
+    public static IServiceCollection AddFinTrackApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddProblemDetails(options =>
             options.CustomizeProblemDetails = context =>
@@ -16,6 +18,8 @@ public static class DependencyInjection
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddOpenApi();
         services.AddHealthChecks();
+        services.AddApplication();
+        services.AddInfrastructure(configuration.GetConnectionString("FinTrack"));
 
         return services;
     }
