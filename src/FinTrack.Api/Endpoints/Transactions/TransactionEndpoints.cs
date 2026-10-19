@@ -3,6 +3,7 @@ using FinTrack.Application.Features.Transactions;
 using FinTrack.Application.Features.Transactions.CreateTransaction;
 using FinTrack.Application.Features.Transactions.DeleteTransaction;
 using FinTrack.Application.Features.Transactions.GetTransaction;
+using FinTrack.Application.Features.Transactions.ListAccountTransactions;
 using FinTrack.Application.Features.Transactions.ListTransactions;
 using FinTrack.Application.Features.Transactions.UpdateTransaction;
 using Microsoft.AspNetCore.Mvc;
@@ -75,7 +76,44 @@ public static class TransactionEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        api.MapGet("/accounts/{id}/transactions", ListAccountTransactionsAsync)
+            .WithTags("Accounts")
+            .WithName("listAccountTransactions")
+            .Produces<TransactionPageResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         return api;
+    }
+
+    private static async Task<IResult> ListAccountTransactionsAsync(
+        int id,
+        [FromQuery(Name = "from")] DateOnly? dateFrom,
+        [FromQuery(Name = "to")] DateOnly? dateTo,
+        int? page,
+        int? pageSize,
+        HttpContext http,
+        ListAccountTransactionsHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(
+            new ListAccountTransactionsQuery(id, dateFrom, dateTo, page, pageSize), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Conta {id} não encontrada.");
+        }
+
+        if (result.IsSuccess)
+        {
+            return Results.Ok(result.Value);
+        }
+
+        var errors = result.ValidationErrors!;
+        return errors.ContainsKey(ListTransactionsHandler.PeriodField)
+            ? ProblemResults.Validation(StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity", errors)
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", errors);
     }
 
     private static async Task<IResult> DeleteTransactionAsync(
