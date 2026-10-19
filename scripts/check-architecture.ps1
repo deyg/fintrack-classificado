@@ -46,7 +46,7 @@ function Assert-NoPattern($area, $expression, $message, [scriptblock] $skip = { 
     foreach ($f in $files) {
         $matches = @(Select-String -Path $f.FullName -Pattern $expression)
         if ($matches.Count -gt 0) {
-            throw "$message: $($f.FullName):$($matches[0].LineNumber)"
+            throw "${message}: $($f.FullName):$($matches[0].LineNumber)"
         }
     }
 }
