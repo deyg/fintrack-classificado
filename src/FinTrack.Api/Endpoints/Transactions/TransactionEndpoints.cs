@@ -1,6 +1,7 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Transactions;
 using FinTrack.Application.Features.Transactions.CreateTransaction;
+using FinTrack.Application.Features.Transactions.DeleteTransaction;
 using FinTrack.Application.Features.Transactions.GetTransaction;
 using FinTrack.Application.Features.Transactions.ListTransactions;
 using FinTrack.Application.Features.Transactions.UpdateTransaction;
@@ -68,7 +69,31 @@ public static class TransactionEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        transactions.MapDelete("/{id}", DeleteTransactionAsync)
+            .WithName("deleteTransaction")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return api;
+    }
+
+    private static async Task<IResult> DeleteTransactionAsync(
+        int id,
+        HttpContext http,
+        DeleteTransactionHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new DeleteTransactionCommand(id), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Lançamento {id} não encontrado.");
+        }
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", result.ValidationErrors!);
     }
 
     private static async Task<IResult> UpdateTransactionAsync(
