@@ -1,4 +1,5 @@
 using FinTrack.Application.Features.Accounts.ChangeAccountStatus;
+using FinTrack.Application.Features.Accounts.DeleteAccount;
 using FinTrack.Application.Features.Accounts.CreateAccount;
 using FinTrack.Application.Features.Accounts.GetAccount;
 using FinTrack.Application.Features.Accounts.ListAccounts;
@@ -31,6 +32,7 @@ public static class DependencyInjection
         services.AddSingleton<IValidator<UpdateAccountCommand>, UpdateAccountValidator>();
         services.AddScoped<UpdateAccountHandler>();
         services.AddScoped<ChangeAccountStatusHandler>();
+        services.AddScoped<DeleteAccountHandler>();
 
         return services;
     }

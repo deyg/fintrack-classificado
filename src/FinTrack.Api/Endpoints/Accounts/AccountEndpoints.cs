@@ -2,6 +2,7 @@ using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Accounts.ChangeAccountStatus;
 using FinTrack.Application.Features.Accounts.CreateAccount;
+using FinTrack.Application.Features.Accounts.DeleteAccount;
 using FinTrack.Application.Features.Accounts.GetAccount;
 using FinTrack.Application.Features.Accounts.ListAccounts;
 using FinTrack.Application.Features.Accounts.UpdateAccount;
@@ -73,7 +74,37 @@ public static class AccountEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        accounts.MapDelete("/{id}", DeleteAccountAsync)
+            .WithName("deleteAccount")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         return api;
+    }
+
+    private static async Task<IResult> DeleteAccountAsync(
+        int id,
+        HttpContext http,
+        DeleteAccountHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new DeleteAccountCommand(id), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Conta {id} não encontrada.");
+        }
+
+        if (result.IsConflict)
+        {
+            return ProblemResults.Conflict(http, result.ConflictMessage!);
+        }
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", result.ValidationErrors!);
     }
 
     private static async Task<IResult> ChangeAccountStatusAsync(

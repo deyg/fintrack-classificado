@@ -12,6 +12,8 @@ public sealed class ListAccountsHandlerTests
 
         public Task AddAsync(Account account, CancellationToken cancellationToken) => Task.CompletedTask;
 
+        public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) => Task.FromResult(true);
+
         public Task<Account?> GetByIdAsync(int id, CancellationToken cancellationToken) => Task.FromResult<Account?>(null);
 
         public Task UpdateAsync(Account account, CancellationToken cancellationToken) => Task.CompletedTask;

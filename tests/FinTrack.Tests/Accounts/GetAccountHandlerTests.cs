@@ -13,6 +13,8 @@ public sealed class GetAccountHandlerTests
 
         public Task AddAsync(Account account, CancellationToken cancellationToken) => Task.CompletedTask;
 
+        public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) => Task.FromResult(true);
+
         public Task<Account?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             Lookups++;
