@@ -1,5 +1,6 @@
 using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Categories;
+using FinTrack.Application.Features.Transactions;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,8 @@ public static class DependencyInjection
         services.AddDbContext<FinTrackDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
-        services.AddScoped<IAccountHistoryChecker, NoTransactionsHistoryChecker>();
+        services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IAccountHistoryChecker, TransactionHistoryChecker>();
 
         return services;
     }

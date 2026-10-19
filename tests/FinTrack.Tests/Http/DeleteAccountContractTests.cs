@@ -117,6 +117,20 @@ public sealed class DeleteAccountContractTests(SqlServerDatabaseFixture database
         Assert.True(await ExistsAsync(id));
     }
 
+    [Fact]
+    public async Task Com_lancamento_real_retorna_409_sem_simulacao()
+    {
+        var id = await SeedAccountAsync();
+        await using (var context = database.CreateContext())
+        {
+            context.Transactions.Add(FinTrack.Domain.Transactions.Transaction.Create(id, 10m, new DateOnly(2026, 10, 6), null));
+            await context.SaveChangesAsync();
+        }
+
+        await AssertProblem(await _factory.CreateClient().DeleteAsync($"/api/v1/accounts/{id}"), HttpStatusCode.Conflict);
+        Assert.True(await ExistsAsync(id));
+    }
+
     private static async Task AssertProblem(HttpResponseMessage response, HttpStatusCode status)
     {
         Assert.Equal(status, response.StatusCode);
