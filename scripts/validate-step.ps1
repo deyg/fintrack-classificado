@@ -56,12 +56,17 @@ try {
         if (-not $?) { throw 'Falha no gate arquitetural estático.' }
         Require-Tests '*ArchitectureTests.cs' 'ArchitectureTests'
     }
-    if ($s.requires_compose -eq '1') {
+    if ($s.requires_compose -eq '1' -or $s.requires_db -eq '1') {
         if (-not (Test-Path 'compose.yaml')) { throw 'compose.yaml ausente.' }
+        if (-not (Test-Path '.env') -and -not $env:MSSQL_SA_PASSWORD) {
+            throw 'Pré-requisito ausente: crie .env a partir de .env.example com MSSQL_SA_PASSWORD (arquivo ignorado pelo Git).'
+        }
         Run 'docker' @('compose','config','--quiet')
+        Run 'docker' @('compose','up','-d','--wait','sqlserver')
+        & (Join-Path $PSScriptRoot 'probe-sqlserver.ps1')
+        if (-not $?) { throw 'Falha no probe SQL Server.' }
     }
     if ($s.requires_db -eq '1') {
-        Run 'docker' @('compose','up','-d','--wait','sqlserver')
         Require-Tests '*IntegrationTests.cs' 'IntegrationTests'
     }
     if ($s.requires_http -eq '1') {
