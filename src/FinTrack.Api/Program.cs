@@ -1,6 +1,7 @@
 using FinTrack.Api.Composition;
 using FinTrack.Api.Endpoints.Accounts;
 using FinTrack.Api.Endpoints.Categories;
+using FinTrack.Api.Endpoints.Transactions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFinTrackApi(builder.Configuration);
@@ -16,7 +17,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapHealthChecks("/health");
-app.MapGroup("/api/v1").MapCategoryEndpoints().MapAccountEndpoints();
+app.MapGroup("/api/v1").MapCategoryEndpoints().MapAccountEndpoints().MapTransactionEndpoints();
 
 app.Run();
 
