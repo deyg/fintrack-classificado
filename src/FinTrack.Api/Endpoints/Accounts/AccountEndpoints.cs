@@ -1,5 +1,6 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Accounts;
+using FinTrack.Application.Features.Accounts.ChangeAccountStatus;
 using FinTrack.Application.Features.Accounts.CreateAccount;
 using FinTrack.Application.Features.Accounts.GetAccount;
 using FinTrack.Application.Features.Accounts.ListAccounts;
@@ -8,6 +9,8 @@ using FinTrack.Application.Features.Accounts.UpdateAccount;
 namespace FinTrack.Api.Endpoints.Accounts;
 
 public sealed record CreateAccountRequest(int? CategoryId, string? Name, string? Classifier);
+
+public sealed record ChangeAccountStatusRequest(bool? Active);
 
 // O setter só roda quando "classifier" está no JSON, distinguindo null explícito de ausência.
 public sealed class UpdateAccountRequest
@@ -63,7 +66,39 @@ public static class AccountEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        accounts.MapPatch("/{id}/status", ChangeAccountStatusAsync)
+            .WithName("changeAccountStatus")
+            .Produces<AccountResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         return api;
+    }
+
+    private static async Task<IResult> ChangeAccountStatusAsync(
+        int id,
+        ChangeAccountStatusRequest request,
+        HttpContext http,
+        ChangeAccountStatusHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new ChangeAccountStatusCommand(id, request.Active), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Conta {id} não encontrada.");
+        }
+
+        if (!result.IsSuccess)
+        {
+            var errors = result.ValidationErrors!;
+            return errors.ContainsKey(ChangeAccountStatusHandler.IdField)
+                ? ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", errors)
+                : ProblemResults.Validation(StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity", errors);
+        }
+
+        return Results.Ok(result.Value);
     }
 
     private static async Task<IResult> UpdateAccountAsync(
