@@ -66,12 +66,17 @@ public abstract class ReportContractTestBase : IAsyncLifetime
         return new Ids(housing.Id, salary.Id, rent.Id, market.Id, wage.Id);
     }
 
-    protected async Task<(HttpStatusCode Status, JsonDocument Json, string? ContentType)> GetAsync(string query)
+    protected Task<(HttpStatusCode Status, JsonDocument Json, string? ContentType)> GetAsync(string query) =>
+        GetReportAsync(Path, query);
+
+    protected async Task<(HttpStatusCode Status, JsonDocument Json, string? ContentType)> GetReportAsync(string report, string query)
     {
-        var response = await _factory.CreateClient().GetAsync($"/api/v1/reports/{Path}{query}");
+        var response = await _factory.CreateClient().GetAsync($"/api/v1/reports/{report}{query}");
         return (response.StatusCode, JsonDocument.Parse(await response.Content.ReadAsStringAsync()),
             response.Content.Headers.ContentType?.MediaType);
     }
+
+    protected IServiceProvider Services => _factory.Services;
 
     protected async Task<int> CountTransactionsAsync()
     {
