@@ -11,6 +11,7 @@ using FinTrack.Application.Features.Categories.ListCategories;
 using FinTrack.Application.Features.Categories.UpdateCategory;
 using FinTrack.Application.Features.Reports.GetFinancialSummary;
 using FinTrack.Application.Features.Reports.GetReportByAccount;
+using FinTrack.Application.Features.Reports.GetReportByClassifier;
 using FinTrack.Application.Features.Reports.GetReportByCategory;
 using FinTrack.Application.Features.Transactions.CreateTransaction;
 using FinTrack.Application.Features.Transactions.DeleteTransaction;
@@ -55,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<GetFinancialSummaryHandler>();
         services.AddScoped<GetReportByCategoryHandler>();
         services.AddScoped<GetReportByAccountHandler>();
+        services.AddScoped<GetReportByClassifierHandler>();
 
         return services;
     }

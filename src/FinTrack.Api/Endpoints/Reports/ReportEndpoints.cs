@@ -2,6 +2,7 @@ using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Reports;
 using FinTrack.Application.Features.Reports.GetFinancialSummary;
 using FinTrack.Application.Features.Reports.GetReportByAccount;
+using FinTrack.Application.Features.Reports.GetReportByClassifier;
 using FinTrack.Application.Features.Reports.GetReportByCategory;
 using Microsoft.AspNetCore.Mvc;
 
@@ -31,7 +32,24 @@ public static class ReportEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        reports.MapGet("/by-classifier", GetReportByClassifierAsync)
+            .WithName("getReportByClassifier")
+            .Produces<ByClassifierReportResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         return api;
+    }
+
+    private static async Task<IResult> GetReportByClassifierAsync(
+        [FromQuery(Name = "from")] DateOnly? dateFrom,
+        [FromQuery(Name = "to")] DateOnly? dateTo,
+        GetReportByClassifierHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new ReportPeriodQuery(dateFrom, dateTo), cancellationToken);
+
+        return result.IsSuccess ? Results.Ok(result.Value) : InvalidPeriod(result.ValidationErrors!);
     }
 
     private static async Task<IResult> GetReportByAccountAsync(
