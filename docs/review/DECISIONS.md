@@ -23,6 +23,12 @@
 |---|---|---|
 | DEC-GOV-006 | Autorização única em lote, de BOOT-002 até REL-005, em ordem do roadmap. Aprovada pelo usuário em 19/10/2026. | Mantidos: um commit atômico por passo, gates verdes, relatório `docs/progress/<ID>.md`. Paradas obrigatórias: falha de gate/ferramenta, decisão pendente bloqueante (API-P01, DEC-ERR-005, DEC-RN-002, DEC-OPS-003), mudança de contrato/regra/arquitetura. Continuam proibidos sem nova autorização: push, merge, PR, release e alterar o repositório v1. |
 
+## Decisões resolvidas durante o lote
+
+| ID | Decisão | Base e limite da evidência |
+|---|---|---|
+| DEC-ERR-005 | **400**: JSON malformado, corpo ausente, tipo errado, propriedade desconhecida ou parâmetros de rota/query inválidos. **422**: valores sintaticamente corretos, mas inválidos nas regras (ex.: nome vazio ou com mais de 100 caracteres, natureza fora de INCOME/EXPENSE). Ambos em `application/problem+json` com `type` `https://httpstatuses.com/<status>` e `errors` por campo no 422. | Aprovado pelo usuário em 19/10/2026, antes de CAT-004. Alinhado às descrições Error400/Error422 do contrato; nenhuma alteração de contrato. |
+
 ## Deliberações pendentes (não tomar decisão automaticamente)
 
 | ID | Questão | Impacto | Quando decidir |
@@ -31,7 +37,6 @@
 | DEC-RN-002 | Validar efeitos de alteração de natureza de categoria associada a contas sem lançamentos e reclassificações de conta sem histórico; proposta conservadora = bloquear alterações que afetem associações/históricos | `PATCH categories` e `PATCH accounts` | antes de CAT-007/ACC-006 |
 | DEC-OPS-003 | Especificar métricas e limite mínimo de cobertura após medição inicial; sem inventar limiar agora | gate de cobertura | REL-001 |
 | DEC-SDK-004 | Selecionar o patch de SDK .NET 10 presente/instalável para `global.json`, com roll-forward dentro do limite acordado | reproducibilidade do build | BOOT-001 |
-| DEC-ERR-005 | Confirmar distinção 400 vs 422 e payloads Problem Details conforme schema congelado | implementação de validators/erros | BOOT-003/CAT-004 |
 
 ## Como resolver
 

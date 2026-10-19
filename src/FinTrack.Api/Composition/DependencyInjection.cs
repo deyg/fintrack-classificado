@@ -1,6 +1,7 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application;
 using FinTrack.Infrastructure;
+using System.Text.Json.Serialization;
 
 namespace FinTrack.Api.Composition;
 
@@ -18,6 +19,8 @@ public static class DependencyInjection
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddOpenApi();
         services.AddHealthChecks();
+        services.ConfigureHttpJsonOptions(options =>
+            options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow);
         services.AddApplication();
         services.AddInfrastructure(configuration.GetConnectionString("FinTrack"));
 
