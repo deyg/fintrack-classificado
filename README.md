@@ -132,5 +132,5 @@ Dependências: `Api → Application`, `Application → Domain`, `Infrastructure 
 - Sem concorrência otimista; verificações de regra (ex.: vínculo antes de excluir) não são serializadas e há janela de corrida.
 - "Hoje" (limite de `realizedAt`) usa o fuso local do servidor; não há decisão formal sobre fuso.
 - Migrations são aplicadas manualmente (`dotnet ef database update`).
-- O CI (`.github/workflows/ci.yml`) está definido, mas ainda não foi executado no GitHub.
+- O CI (`.github/workflows/ci.yml`) passou na primeira execução no GitHub (run 39336085393); falta marcar o job `gates` como check obrigatório na proteção de branch.
 - Cobertura é apenas relatada (DEC-OPS-003); não há limite mínimo.
