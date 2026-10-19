@@ -1,5 +1,6 @@
 using FinTrack.Application.Features.Categories.CreateCategory;
 using FinTrack.Application.Features.Categories.GetCategory;
+using FinTrack.Application.Features.Categories.DeleteCategory;
 using FinTrack.Application.Features.Categories.ListCategories;
 using FinTrack.Application.Features.Categories.UpdateCategory;
 using FluentValidation;
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<ListCategoriesHandler>();
         services.AddScoped<GetCategoryHandler>();
         services.AddScoped<UpdateCategoryHandler>();
+        services.AddScoped<DeleteCategoryHandler>();
 
         return services;
     }

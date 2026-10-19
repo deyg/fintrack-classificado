@@ -19,4 +19,7 @@ public interface ICategoryRepository
 
     // Verdadeiro se existir ao menos uma conta vinculada à categoria.
     Task<bool> HasAccountsAsync(int categoryId, CancellationToken cancellationToken);
+
+    // Remove a categoria; falso se ela não existir.
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
 }

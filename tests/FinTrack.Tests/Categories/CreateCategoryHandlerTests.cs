@@ -41,6 +41,8 @@ public sealed class CreateCategoryHandlerTests
         public Task UpdateAsync(Category category, CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task<bool> HasAccountsAsync(int categoryId, CancellationToken cancellationToken) => Task.FromResult(false);
+
+        public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) => Task.FromResult(false);
     }
 
     private static CreateCategoryHandler Handler(FakeRepository repository) =>

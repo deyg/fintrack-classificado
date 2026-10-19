@@ -32,6 +32,9 @@ internal sealed class CategoryRepository(FinTrackDbContext context) : ICategoryR
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) =>
+        await context.Categories.Where(category => category.Id == id).ExecuteDeleteAsync(cancellationToken) > 0;
+
     public Task<bool> HasAccountsAsync(int categoryId, CancellationToken cancellationToken) =>
         context.Accounts.AnyAsync(account => account.CategoryId == categoryId, cancellationToken);
 }

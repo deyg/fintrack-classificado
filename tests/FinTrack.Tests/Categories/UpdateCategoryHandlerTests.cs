@@ -26,6 +26,8 @@ public sealed class UpdateCategoryHandlerTests
             return Task.CompletedTask;
         }
 
+        public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) => Task.FromResult(false);
+
         public Task<bool> HasAccountsAsync(int categoryId, CancellationToken cancellationToken)
         {
             AccountChecks++;

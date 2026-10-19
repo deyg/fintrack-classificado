@@ -1,6 +1,7 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Categories;
 using FinTrack.Application.Features.Categories.CreateCategory;
+using FinTrack.Application.Features.Categories.DeleteCategory;
 using FinTrack.Application.Features.Categories.GetCategory;
 using FinTrack.Application.Features.Categories.ListCategories;
 using FinTrack.Application.Features.Categories.UpdateCategory;
@@ -42,7 +43,37 @@ public static class CategoryEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        categories.MapDelete("/{id}", DeleteCategoryAsync)
+            .WithName("deleteCategory")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         return api;
+    }
+
+    private static async Task<IResult> DeleteCategoryAsync(
+        int id,
+        HttpContext http,
+        DeleteCategoryHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new DeleteCategoryCommand(id), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Categoria {id} não encontrada.");
+        }
+
+        if (result.IsConflict)
+        {
+            return ProblemResults.Conflict(http, result.ConflictMessage!);
+        }
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", result.ValidationErrors!);
     }
 
     private static async Task<IResult> UpdateCategoryAsync(
