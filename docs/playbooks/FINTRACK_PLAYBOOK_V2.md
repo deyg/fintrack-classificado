@@ -17,7 +17,7 @@
 1. A **especificação de produto e regras** preserva RF01–RF14 e RN01–RN12 documentados em `docs/architecture/domain-and-requirements.md`.
 2. `docs/contracts/fintrack-openapi.yaml` contém o baseline canônico aprovado para o v2 em OpenAPI 3.1.0 (21 operações, 25 schemas). Em BOOT-000, o usuário selecionou explicitamente o contrato atual como baseline; o contrato anteriormente aprovado em OpenAPI 3.0.3 não estava disponível para comparação. A decisão não afirma equivalência semântica com a versão ausente, e nenhuma alteração de contrato foi feita.
 3. `docs/roadmap/steps.csv` é a fonte versionável dos passos e gates; `docs/traceability/endpoints.csv` vincula as 21 operações a passos e regras.
-4. `docs/review/DECISIONS.md` registra questões deliberadamente em aberto. Particularmente **API-P01, renomeação de categoria com contas/histórico**, bloqueia CAT-007 até decisão aprovada.
+4. `docs/review/DECISIONS.md` registra decisões resolvidas e questões em aberto. API-P01 foi decidida (409 ao renomear com vínculos); a ordem efetiva coloca CAT-007, CAT-008 e CAT-009 depois de ACC-002 (DEC-ORD-007).
 5. `AGENTS.md` rege o agente Codex; alterações neste playbook/documentos requerem aprovação e commit rastreável. Artefatos v1 são históricos e não devem ser sobrescritos neste novo repositório.
 
 ## 2. Modelo arquitetural e direções de dependência
@@ -229,7 +229,7 @@ As fichas abaixo compõem as instruções a serem executadas; o Codex **não** d
 ### CAT-007 — Expor PATCH /categories/{id}
 
 - **Entrega mínima:** UpdateCategoryCommand/Handler e endpoint; política de mudança/renomeação deliberada.
-- **Aceite verificável:** BLOQUEADO enquanto API-P01 estiver pendente; após decisão formal, proteger histórico/relacionamentos e 409 cabível.
+- **Aceite verificável:** executar após ACC-002 (DEC-ORD-007); API-P01 decidida: renomeação e mudança de natureza (DEC-RN-002, parte categoria) com contas/lançamentos vinculados retornam 409; sem vínculos são permitidas.
 - **Teste específico obrigatório:** Testes de renomeação, alteração de natureza, casos com contas/histórico e negativa 409.
 - **Rastreio:** RF01; RN11; API-P01 · OpenAPI `updateCategory`.
 - **Commit esperado:** `feat(categories): CAT-007 expor patch categoriesid` (resumo pode ser abreviado; manter ID).

@@ -28,13 +28,15 @@
 | ID | Decisão | Base e limite da evidência |
 |---|---|---|
 | DEC-ERR-005 | **400**: JSON malformado, corpo ausente, tipo errado, propriedade desconhecida ou parâmetros de rota/query inválidos. **422**: valores sintaticamente corretos, mas inválidos nas regras (ex.: nome vazio ou com mais de 100 caracteres, natureza fora de INCOME/EXPENSE). Ambos em `application/problem+json` com `type` `https://httpstatuses.com/<status>` e `errors` por campo no 422. | Aprovado pelo usuário em 19/10/2026, antes de CAT-004. Alinhado às descrições Error400/Error422 do contrato; nenhuma alteração de contrato. |
+| API-P01 | Renomear categoria com contas ou lançamentos vinculados é **bloqueado com 409**. Sem vínculos, a renomeação é permitida. | Aprovado pelo usuário em 19/10/2026. Vale para `PATCH /categories/{id}` (CAT-007). |
+| DEC-RN-002 (parte categoria) | Alterar a natureza de uma categoria com **qualquer conta vinculada** é bloqueado com 409; sem vínculos, é permitido. | Aprovado pelo usuário em 19/10/2026. A parte de reclassificação de conta (`PATCH /accounts`, ACC-006) segue pendente. |
+| DEC-ORD-007 | Ordem alterada: CAT-007 é executado **depois de ACC-002**, pois a checagem de vínculos exige a entidade Conta. Por coerência (409 com contas), CAT-008 e CAT-009 também seguem ACC-002. Sequência efetiva: ACC-001, ACC-002, CAT-007, CAT-008, CAT-009, ACC-003 em diante. | Aprovado pelo usuário em 19/10/2026 para CAT-007; extensão a CAT-008/CAT-009 por dependência idêntica (decisão registrada aqui, `steps.csv` não foi alterado). |
 
 ## Deliberações pendentes (não tomar decisão automaticamente)
 
 | ID | Questão | Impacto | Quando decidir |
 |---|---|---|---|
-| API-P01 | Política detalhada de renomeação de categorias que já possuem contas ou lançamentos históricos | `PATCH /categories/{id}` | **antes de CAT-007 (bloqueante)** |
-| DEC-RN-002 | Validar efeitos de alteração de natureza de categoria associada a contas sem lançamentos e reclassificações de conta sem histórico; proposta conservadora = bloquear alterações que afetem associações/históricos | `PATCH categories` e `PATCH accounts` | antes de CAT-007/ACC-006 |
+| DEC-RN-002 (parte conta) | Reclassificação de conta sem histórico em `PATCH /accounts`; proposta conservadora = bloquear alterações que afetem associações/históricos. A parte de categoria está resolvida acima. | `PATCH accounts` | antes de ACC-006 |
 | DEC-OPS-003 | Especificar métricas e limite mínimo de cobertura após medição inicial; sem inventar limiar agora | gate de cobertura | REL-001 |
 | DEC-SDK-004 | Selecionar o patch de SDK .NET 10 presente/instalável para `global.json`, com roll-forward dentro do limite acordado | reproducibilidade do build | BOOT-001 |
 
