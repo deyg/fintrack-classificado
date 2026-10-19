@@ -12,6 +12,7 @@ using FinTrack.Application.Features.Categories.UpdateCategory;
 using FinTrack.Application.Features.Transactions.CreateTransaction;
 using FinTrack.Application.Features.Transactions.GetTransaction;
 using FinTrack.Application.Features.Transactions.ListTransactions;
+using FinTrack.Application.Features.Transactions.UpdateTransaction;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -42,6 +43,8 @@ public static class DependencyInjection
         services.AddScoped<CreateTransactionHandler>();
         services.AddScoped<ListTransactionsHandler>();
         services.AddScoped<GetTransactionHandler>();
+        services.AddSingleton<IValidator<UpdateTransactionCommand>, UpdateTransactionValidator>();
+        services.AddScoped<UpdateTransactionHandler>();
 
         return services;
     }

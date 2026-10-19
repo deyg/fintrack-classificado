@@ -3,11 +3,37 @@ using FinTrack.Application.Features.Transactions;
 using FinTrack.Application.Features.Transactions.CreateTransaction;
 using FinTrack.Application.Features.Transactions.GetTransaction;
 using FinTrack.Application.Features.Transactions.ListTransactions;
+using FinTrack.Application.Features.Transactions.UpdateTransaction;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinTrack.Api.Endpoints.Transactions;
 
 public sealed record CreateTransactionRequest(int? AccountId, decimal? Amount, DateOnly? RealizedAt, string? Description);
+
+// O setter só roda quando "description" está no JSON, distinguindo null explícito de ausência.
+public sealed class UpdateTransactionRequest
+{
+    private string? _description;
+
+    public int? AccountId { get; set; }
+
+    public decimal? Amount { get; set; }
+
+    public DateOnly? RealizedAt { get; set; }
+
+    public string? Description
+    {
+        get => _description;
+        set
+        {
+            _description = value;
+            DescriptionProvided = true;
+        }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool DescriptionProvided { get; private set; }
+}
 
 public static class TransactionEndpoints
 {
@@ -34,7 +60,48 @@ public static class TransactionEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        transactions.MapPatch("/{id}", UpdateTransactionAsync)
+            .WithName("updateTransaction")
+            .Produces<TransactionResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         return api;
+    }
+
+    private static async Task<IResult> UpdateTransactionAsync(
+        int id,
+        UpdateTransactionRequest request,
+        HttpContext http,
+        UpdateTransactionHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(
+            new UpdateTransactionCommand(
+                id, request.AccountId, request.Amount, request.RealizedAt, request.DescriptionProvided, request.Description),
+            cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Lançamento {id} não encontrado.");
+        }
+
+        if (result.IsConflict)
+        {
+            return ProblemResults.Conflict(http, result.ConflictMessage!);
+        }
+
+        if (!result.IsSuccess)
+        {
+            var errors = result.ValidationErrors!;
+            return errors.ContainsKey(UpdateTransactionHandler.IdField)
+                ? ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", errors)
+                : ProblemResults.Validation(StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity", errors);
+        }
+
+        return Results.Ok(result.Value);
     }
 
     private static async Task<IResult> GetTransactionAsync(
