@@ -1,6 +1,8 @@
 # Contrato de gates do CI — espelha scripts/validate-step.ps1.
 # Nenhuma etapa tolera falha: gate indisponível ou falho derruba o job.
-# Passos futuros (cobertura, ContractTests, IntegrationTests) entram aqui quando seus gates existirem.
+# build-test: testes sem banco (inclui ArchitectureTests). sql-server: SQL Server real efêmero,
+# suíte completa (Integration + Contract) com cobertura (DEC-OPS-003: somente relatório, sem limite).
+# gates: agregador único; só fica verde se ambos os jobs estiverem verdes.
 name: ci
 
 on:
@@ -44,8 +46,8 @@ jobs:
       - name: Build
         run: dotnet build FinTrack.sln -c Release --no-restore
 
-      - name: Test (inclui ArchitectureTests; IntegrationTests rodam no job sql-server)
-        run: dotnet test FinTrack.sln -c Release --no-build --filter "FullyQualifiedName!~IntegrationTests" --logger "trx;LogFileName=test-results.trx" --results-directory artifacts/test-results
+      - name: Test sem banco (inclui ArchitectureTests; Integration/Contract rodam no job sql-server)
+        run: dotnet test FinTrack.sln -c Release --no-build --filter "FullyQualifiedName!~IntegrationTests&FullyQualifiedName!~ContractTests" --logger "trx;LogFileName=test-results.trx" --results-directory artifacts/test-results
 
       - name: Publicar resultados de teste
         if: always()
@@ -81,9 +83,40 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: IntegrationTests contra SQL Server real (G5)
-        run: dotnet test FinTrack.sln -c Release --filter "FullyQualifiedName~IntegrationTests"
+      - name: Suíte completa contra SQL Server real, com cobertura (G5/G6)
+        run: dotnet test FinTrack.sln -c Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --results-directory artifacts/sql-results
+
+      - name: Resumo de cobertura (linhas e ramos; sem limite)
+        if: always()
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem artifacts/sql-results -Recurse -Filter coverage.cobertura.xml | Select-Object -First 1
+          if (-not $file) { throw 'Nenhum XML Cobertura gerado.' }
+          $c = ([xml](Get-Content $file.FullName)).coverage
+          $line = '{0:P2} ({1}/{2})' -f [double]$c.'line-rate', $c.'lines-covered', $c.'lines-valid'
+          $branch = '{0:P2} ({1}/{2})' -f [double]$c.'branch-rate', $c.'branches-covered', $c.'branches-valid'
+          "Cobertura: linhas $line; ramos $branch" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Publicar resultados e cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-server-results
+          path: artifacts/sql-results
+          if-no-files-found: error
 
       - name: Derrubar ambiente
         if: always()
         run: docker compose down -v
+
+  gates:
+    name: gates (agregador)
+    if: always()
+    needs: [build-test, sql-server]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exigir todos os gates verdes
+        shell: bash
+        run: |
+          test "${{ needs.build-test.result }}" = "success"
+          test "${{ needs.sql-server.result }}" = "success"
