@@ -2,6 +2,19 @@
 
 API REST de finanças pessoais (categorias, contas, lançamentos e relatórios) em .NET 10, Clean Architecture por feature, EF Core e SQL Server. O contrato é [docs/contracts/fintrack-openapi.yaml](docs/contracts/fintrack-openapi.yaml) (OpenAPI 3.1.0, 21 operações sob `/api/v1`).
 
+## O que o app faz
+
+Registra o que você ganha e gasta e mostra relatórios sobre isso.
+
+- **Categorias:** têm natureza de receita (`INCOME`) ou despesa (`EXPENSE`), por exemplo "Salário" ou "Moradia".
+- **Contas:** pertencem a uma categoria, por exemplo "Aluguel" dentro de "Moradia". Contas de despesa recebem um classificador (`OF`, `OV`, `NOF` ou `NOV`). Uma conta inativa recusa novos lançamentos, mas o histórico continua consultável.
+- **Lançamentos:** valores realizados em uma conta, com data (não pode ser futura) e descrição. Podem ser listados, filtrados, alterados e excluídos, inclusive por conta.
+- **Relatórios:** dado um período (`from` e `to`), devolvem o resumo (receita, despesa e resultado) e os totais por categoria, por conta e por classificador. Os totais são calculados na hora, nunca guardados.
+
+Regras de integridade: não se exclui categoria que tem contas, não se lança em conta inativa e não se muda a natureza de uma categoria que já tem contas. Erros seguem Problem Details (400, 404, 409, 422).
+
+Não há autenticação, multiusuário nem interface: é somente a API.
+
 ## Pré-requisitos
 
 - .NET SDK 10.0.112 (ver `global.json`; roll-forward só de patch)
@@ -31,6 +44,22 @@ API REST de finanças pessoais (categorias, contas, lançamentos e relatórios) 
    dotnet run --project src/FinTrack.Api -c Release
    ```
    Health check: `GET /health`.
+
+### Alternativa: Prompt de Comando (cmd)
+
+```bat
+cd C:\28-fintrack-II
+copy .env.example .env
+docker compose up -d --wait sqlserver
+
+set ConnectionStrings__FinTrack=Server=localhost,14330;Database=FinTrack;User Id=sa;Password=SUA_SENHA;TrustServerCertificate=True
+
+dotnet ef database update --project src/FinTrack.Infrastructure --startup-project src/FinTrack.Infrastructure --connection "%ConnectionStrings__FinTrack%"
+
+dotnet run --project src/FinTrack.Api -c Release
+```
+
+Troque `SUA_SENHA` pelo `MSSQL_SA_PASSWORD` do `.env` (edite o `.env` antes; pule o `copy` se ele já existir). O `dotnet ef` só é necessário na primeira vez ou após novas migrations. Se a senha tiver `&`, `%` ou `^`, use o PowerShell. Para parar: `Ctrl+C` e `docker compose down`.
 
 ## Testes e gates
 
