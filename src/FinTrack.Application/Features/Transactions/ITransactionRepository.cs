@@ -16,4 +16,7 @@ public interface ITransactionRepository
 
     // Remove o lançamento; retorna falso quando ele não existe mais.
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
+
+    // Ordenação determinística: RealizedAt decrescente e Id decrescente; page é 1-based.
+    Task<TransactionPageData> ListAsync(TransactionFilter filter, int page, int pageSize, CancellationToken cancellationToken);
 }

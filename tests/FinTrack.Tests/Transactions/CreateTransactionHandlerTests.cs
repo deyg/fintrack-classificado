@@ -41,6 +41,10 @@ public sealed class CreateTransactionHandlerTests
         public Task UpdateAsync(Transaction transaction, CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) => Task.FromResult(true);
+
+        public Task<TransactionPageData> ListAsync(
+            TransactionFilter filter, int page, int pageSize, CancellationToken cancellationToken) =>
+            Task.FromResult(new TransactionPageData([], 0));
     }
 
     private static Account ActiveAccount() => Account.Create(1, "Aluguel", CategoryNature.Expense, ExpenseClassifier.OF);
