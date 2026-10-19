@@ -8,7 +8,7 @@
 
 **Stack:** .NET 10 LTS, C# 14, ASP.NET Core Minimal APIs, EF Core 10 + SQL Server, FluentValidation, xUnit, Docker Compose, OpenAPI 3.1, Git/GitHub, GitHub Actions, PowerShell.
 
-**Execução:** Codex no VS Code, **exatamente um passo por autorização**, validação e commit após gates verdes, sem `push` automático.
+**Execução:** Codex no VS Code, **um passo por vez, um commit por passo**, com autorização por passo ou em lote (DEC-GOV-006), validação e commit após gates verdes, sem `push` automático.
 
 > A autorização exclusiva de BOOT-000 permite apenas o congelamento documental descrito nesta etapa. As demais etapas exigem novas autorizações. Scripts anexos são instrumentos de governança e não comprovam testes na solution, ainda inexistente.
 
@@ -38,14 +38,14 @@ flowchart TB
 
 ## 3. Ciclo de execução: um passo / um commit
 
-1. **Autorizar:** usuário envia explicitamente `Autorizo exclusivamente <ID>`. Conferir passo anterior, branch/working tree, contrato e decisões pendentes.
+1. **Autorizar:** usuário envia explicitamente `Autorizo exclusivamente <ID>` ou a autorização em lote `Autorizo <ID-inicial> até <ID-final>, em ordem` (DEC-GOV-006). Conferir passo anterior, branch/working tree, contrato e decisões pendentes.
 2. **Planejar o incremento:** o Codex declara arquivos mínimos, requisitos, interfaces, teste positivo/negativo, gates e impacto contratual, sem antecipar outra feature.
 3. **Escrever testes e implementar:** começar pelo comportamento observável. Criar interface/handler na Application, invariantes no Domain, implementação concreta na Infrastructure, adaptador HTTP na Api — quando cada parte for necessária.
 4. **Validar:** executar `scripts/validate-step.ps1 -StepId <ID>`; gates são derivados do CSV (sem permitir desativação manual para obter sinal verde). Em passos com banco, exigir SQL Server real e migrações. Validar architecture/contract por testes automatizados; registrar saída verdadeira.
 5. **Inspecionar diffs/segredos:** `git diff --check`, `git status`, `git diff`, depois stage com caminhos explícitos (`git add <paths>`); `git diff --cached --check`; não adicionar logs com segredo nem arquivos gerados bin/obj.
 6. **Evidenciar:** preencher `docs/progress/<ID>.md` copiando `docs/templates/step-report.md` com RF/RN, operações, testes (nomes e resultados), gates, decisões e arquivos modificados. Log local em `artifacts/validation/` (gitignored); só incluir resumo sem credenciais no commit.
 7. **Commit:** somente gates verdes e nenhuma decisão pendente bloqueante; **um único commit** no passo: `<tipo>(<feature>): <ID> resumo`. Corpo: `RF: ...`, `RN: ...`, `OpenAPI: ...`, `Gates: ...`. Guardar SHA via `git rev-parse HEAD` **depois** do commit; não gravar SHA do próprio commit em arquivo commitado.
-8. **Relatório e parada:** enviar ao revisor ID, mudanças, evidências, gates, SHA real e sugestão seguinte. Não executar próximo passo sem nova autorização; não fazer push, merge, release ou PR sem aprovação específica.
+8. **Relatório e parada:** enviar ao revisor ID, mudanças, evidências, gates, SHA real e sugestão seguinte. Fora de lote, não executar próximo passo sem nova autorização; em lote autorizado, seguir ao próximo passo após o relatório, parando nas condições de DEC-GOV-006. Não fazer push, merge, release ou PR sem aprovação específica.
 
 **Falha:** se gate falhar, corrigir **somente dentro do passo** e reexecutar. Falha de ferramenta não vira `PASS`; pré-requisito ausente bloqueia. Se exigir redefinir regra, contrato ou arquitetura, parar sem commit e solicitar decisão. Abster de `git reset --hard` ou descartar alterações do usuário.
 
@@ -496,7 +496,7 @@ As fichas abaixo compõem as instruções a serem executadas; o Codex **não** d
 2. Copie os arquivos deste pacote para a raiz, sem mudar caminhos. `AGENTS.md` deve estar na raiz e ser lido pelo Codex.
 3. Verifique `dotnet --list-sdks`, `git --version` e `docker --version`; PowerShell `pwsh` ou Windows PowerShell disponível.
 4. Inicialize `git init` **manualmente**, configure identidade Git e confira `git status`. A ação não significa que um passo está autorizado.
-5. Envie ao Codex **somente** `Autorizo exclusivamente BOOT-000`; não o autorize a executar vários passos de uma vez. A decisão DEC-API-001 foi resolvida escolhendo o baseline 3.1.0 atual, sem alegar comparação com o contrato 3.0.3 indisponível.
+5. Envie ao Codex **somente** `Autorizo exclusivamente BOOT-000`; a execução de vários passos só é permitida pela autorização em lote de DEC-GOV-006. A decisão DEC-API-001 foi resolvida escolhendo o baseline 3.1.0 atual, sem alegar comparação com o contrato 3.0.3 indisponível.
 6. Para passos futuros, use `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/validate-step.ps1 -StepId CAT-004` no PowerShell tradicional ou `pwsh -File scripts/validate-step.ps1 -StepId CAT-004` no PowerShell 7. O script falhará intencionalmente antes de a solution e os testes necessários existirem.
 
 ### Prompt-base para cada autorização

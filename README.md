@@ -39,4 +39,4 @@ docs/
 scripts/{validate-step.ps1,check-architecture.ps1,verify-manifest.ps1}
 ```
 
-**Critério central:** um passo supervisionado, um conjunto de gates reais, um único commit depois do sucesso, e revisão humana antes do passo seguinte. Não afirmar 'testado' ou 'implementado' enquanto não existir execução real.
+**Critério central:** um passo supervisionado, um conjunto de gates reais, um único commit depois do sucesso, e revisão humana antes do passo seguinte (ou parada obrigatória conforme DEC-GOV-006 quando houver autorização em lote). Não afirmar 'testado' ou 'implementado' enquanto não existir execução real.
