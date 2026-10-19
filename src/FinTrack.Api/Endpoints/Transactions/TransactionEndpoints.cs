@@ -1,6 +1,7 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Transactions;
 using FinTrack.Application.Features.Transactions.CreateTransaction;
+using FinTrack.Application.Features.Transactions.GetTransaction;
 using FinTrack.Application.Features.Transactions.ListTransactions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,7 +28,31 @@ public static class TransactionEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        transactions.MapGet("/{id}", GetTransactionAsync)
+            .WithName("getTransaction")
+            .Produces<TransactionResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return api;
+    }
+
+    private static async Task<IResult> GetTransactionAsync(
+        int id,
+        HttpContext http,
+        GetTransactionHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Lançamento {id} não encontrado.");
+        }
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", result.ValidationErrors!);
     }
 
     private static async Task<IResult> ListTransactionsAsync(
