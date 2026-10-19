@@ -13,4 +13,10 @@ public interface ICategoryRepository
 
     // Retorna nulo quando a categoria não existe.
     Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken);
+
+    // Persiste alterações de uma categoria existente.
+    Task UpdateAsync(Category category, CancellationToken cancellationToken);
+
+    // Verdadeiro se existir ao menos uma conta vinculada à categoria.
+    Task<bool> HasAccountsAsync(int categoryId, CancellationToken cancellationToken);
 }

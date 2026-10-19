@@ -21,6 +21,10 @@ public sealed class Category
     public static Category Create(string? name, CategoryNature nature) =>
         new(NormalizeName(name), EnsureValidNature(nature));
 
+    public void Rename(string? name) => Name = NormalizeName(name);
+
+    public void ChangeNature(CategoryNature nature) => Nature = EnsureValidNature(nature);
+
     private static string NormalizeName(string? name)
     {
         var trimmed = name?.Trim();

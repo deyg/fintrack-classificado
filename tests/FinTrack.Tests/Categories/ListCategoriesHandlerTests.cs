@@ -25,6 +25,10 @@ public sealed class ListCategoriesHandlerTests
 
         public Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult<Category?>(null);
+
+        public Task UpdateAsync(Category category, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<bool> HasAccountsAsync(int categoryId, CancellationToken cancellationToken) => Task.FromResult(false);
     }
 
     private static Category Stored(int id, string name, CategoryNature nature)

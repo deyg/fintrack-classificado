@@ -1,11 +1,15 @@
+using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Categories;
 using FinTrack.Application.Features.Categories.CreateCategory;
 using FinTrack.Application.Features.Categories.GetCategory;
 using FinTrack.Application.Features.Categories.ListCategories;
+using FinTrack.Application.Features.Categories.UpdateCategory;
 
 namespace FinTrack.Api.Endpoints.Categories;
 
 public sealed record CreateCategoryRequest(string? Name, string? Nature);
+
+public sealed record UpdateCategoryRequest(string? Name, string? Nature);
 
 public static class CategoryEndpoints
 {
@@ -30,7 +34,45 @@ public static class CategoryEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        categories.MapPatch("/{id}", UpdateCategoryAsync)
+            .WithName("updateCategory")
+            .Produces<CategoryResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         return api;
+    }
+
+    private static async Task<IResult> UpdateCategoryAsync(
+        int id,
+        UpdateCategoryRequest request,
+        HttpContext http,
+        UpdateCategoryHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new UpdateCategoryCommand(id, request.Name, request.Nature), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Categoria {id} não encontrada.");
+        }
+
+        if (result.IsConflict)
+        {
+            return ProblemResults.Conflict(http, result.ConflictMessage!);
+        }
+
+        if (!result.IsSuccess)
+        {
+            var errors = result.ValidationErrors!;
+            return errors.ContainsKey(UpdateCategoryHandler.IdField)
+                ? ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", errors)
+                : ProblemResults.Validation(StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity", errors);
+        }
+
+        return Results.Ok(result.Value);
     }
 
     private static async Task<IResult> GetCategoryAsync(
