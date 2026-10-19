@@ -77,7 +77,7 @@ try {
         Run 'dotnet' @('test','FinTrack.sln','-c','Release','--no-build','--collect','XPlat Code Coverage')
         $coverageFiles = @(Get-ChildItem 'tests/FinTrack.Tests' -Recurse -File -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -ge $startTime.AddSeconds(-2) })
         if ($coverageFiles.Count -eq 0) { throw 'Nenhum XML Cobertura novo: o coletor pode não estar instalado.' }
-        Write-Host "Cobertura gerada: $($coverageFiles[0].FullName). Meta numérica: validar decisão DEC-OPS-003." -ForegroundColor Yellow
+        Write-Host "Cobertura gerada: $($coverageFiles[0].FullName). Meta numérica: nenhuma (DEC-OPS-003: somente relatório; ver scripts/measure-coverage.ps1)." -ForegroundColor Yellow
     }
     Write-Host "`nGATES TÉCNICOS PASS: $StepId. Atenção: revisão de critérios, segredos e diff staged antes do commit." -ForegroundColor Green
 }

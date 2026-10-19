@@ -33,12 +33,12 @@
 | DEC-ORD-007 | Ordem alterada: CAT-007 é executado **depois de ACC-002**, pois a checagem de vínculos exige a entidade Conta. Por coerência (409 com contas), CAT-008 e CAT-009 também seguem ACC-002. Sequência efetiva: ACC-001, ACC-002, CAT-007, CAT-008, CAT-009, ACC-003 em diante. | Aprovado pelo usuário em 19/10/2026 para CAT-007; extensão a CAT-008/CAT-009 por dependência idêntica (decisão registrada aqui, `steps.csv` não foi alterado). |
 | DEC-RN-002 (parte conta) | Em `PATCH /accounts/{id}`: conta **com lançamentos** não pode mudar de categoria nem de classificador (409); só o nome muda. Conta **sem lançamentos** pode mudar categoria e classificador, desde que coerentes (EXPENSE exige classificador, INCOME o proíbe; 422 se incoerente). `active` não é alterado por este endpoint. Enquanto TXN não existe, a checagem usa a porta `IAccountHistoryChecker` com implementação provisória "sem lançamentos", a ser ligada ao banco em TXN. | Aprovado pelo usuário em 19/10/2026, antes de ACC-006. |
 | DEC-REP-008 | Relatórios (`/reports/*`): `from` e `to` obrigatórios (ausente ou formato inválido = 400; `to < from` = 422); período inclusivo. **by-category** e **by-account** listam **somente grupos com lançamentos** no período, ordenados por nome (ordem do banco, sem distinção de maiúsculas) e desempate por id. **by-classifier** retorna **sempre os 4 grupos** (OF, OV, NOF, NOV, nessa ordem), com total 0 e `transactionCount` 0 quando vazios; só despesas participam. Sem dados: `income`, `expenses` e `balance` = 0. | Aprovado pelo usuário em 19/10/2026, antes de REP-001. Contrato omisso; nenhuma alteração de contrato. |
+| DEC-OPS-003 | Cobertura: métricas **linhas** e **ramos** (Coverlet/Cobertura), medidas por `scripts/measure-coverage.ps1`, **sem limite mínimo** por ora (somente relatório). Medição inicial em REL-001: linhas 91,95% (1818/1977), ramos 76,55% (506/661). Um limite só passa a valer com aprovação explícita futura. | Aprovado pelo usuário em 19/10/2026, antes de REL-001. Nenhum número foi suposto. |
 
 ## Deliberações pendentes (não tomar decisão automaticamente)
 
 | ID | Questão | Impacto | Quando decidir |
 |---|---|---|---|
-| DEC-OPS-003 | Especificar métricas e limite mínimo de cobertura após medição inicial; sem inventar limiar agora | gate de cobertura | REL-001 |
 | DEC-SDK-004 | Selecionar o patch de SDK .NET 10 presente/instalável para `global.json`, com roll-forward dentro do limite acordado | reproducibilidade do build | BOOT-001 |
 
 ## Como resolver
