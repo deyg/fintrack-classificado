@@ -1,42 +1,107 @@
-# FinTrack v2 — Pacote de Playbook Codex (para revisão)
+# FinTrack v2
 
-**NÃO é código de aplicação.** A solution e os cinco projetos serão criados posteriormente, somente quando `BOOT-001` for autorizado. A estrutura planejada é `src/FinTrack.Api`, `src/FinTrack.Application`, `src/FinTrack.Domain`, `src/FinTrack.Infrastructure` e `tests/FinTrack.Tests`. BOOT-000 é o único passo autorizado nesta execução; os demais aguardam autorização separada.
+API REST de finanças pessoais (categorias, contas, lançamentos e relatórios) em .NET 10, Clean Architecture por feature, EF Core e SQL Server. O contrato é [docs/contracts/fintrack-openapi.yaml](docs/contracts/fintrack-openapi.yaml) (OpenAPI 3.1.0, 21 operações sob `/api/v1`).
 
-## Como revisar
+## Pré-requisitos
 
-1. Leia `docs/playbooks/FINTRACK_PLAYBOOK_V2.md` (guia principal e 44 fichas de execução).
-2. Confira `docs/architecture/clean-architecture.md`, `docs/architecture/ADR-0001-clean-architecture-feature-first.md` e `docs/architecture/domain-and-requirements.md` e `docs/architecture/premises.md`.
-3. Confira `docs/roadmap/steps.csv` (44 passos e flags de gates), `docs/traceability/endpoints.csv` (21 operações) e `docs/review/DECISIONS.md` (pendências explícitas).
-4. O baseline canônico do v2 é OpenAPI 3.1.0 em `docs/contracts/fintrack-openapi.yaml`, selecionado explicitamente em BOOT-000. O contrato aprovado anteriormente em 3.0.3 não estava disponível para comparação; não se afirma equivalência semântica entre as versões.
-5. Examine `AGENTS.md` e os scripts PowerShell **sem executá-los como implementação**.
+- .NET SDK 10.0.112 (ver `global.json`; roll-forward só de patch)
+- Docker (SQL Server 2022 via `compose.yaml`)
+- Ferramenta `dotnet-ef` (`dotnet tool install --global dotnet-ef`)
+- Windows PowerShell 5.1 ou `pwsh` para os scripts
 
-## Como usar depois da aprovação do Playbook
+## Primeira execução
 
-- Crie um novo repositório Git `fintrack-clean-v2` (nome sugerido). Não altere o repositório antigo.
-- Copie este pacote para a raiz. Inicialize o Git e configure a identidade conforme sua máquina.
-- Autorize **somente** `BOOT-000` com prompt ao Codex. Ele deverá registrar e validar o baseline documental; `BOOT-001` somente sob autorização posterior.
-- Ao construir código, cada passo cria relatório, executa `scripts/validate-step.ps1 -StepId CAT-004` (exemplo) e só então gera commit. Usar Windows PowerShell ou `pwsh`.
-- Nenhum script executa commit ou push automaticamente. Gates de integração exigem SQL Server local via Docker quando a feature o introduzir.
+1. Configure o segredo local (o `.env` é ignorado pelo Git; nunca o commite):
+   ```powershell
+   Copy-Item .env.example .env
+   # edite .env: MSSQL_SA_PASSWORD (8+ caracteres, maiúscula, minúscula, número e símbolo) e, se quiser, MSSQL_PORT (padrão 14330)
+   ```
+2. Suba o SQL Server e aguarde ficar saudável:
+   ```powershell
+   docker compose up -d --wait sqlserver
+   ```
+3. Defina a connection string (variável de ambiente; sobrescreve o `appsettings.json`, que não tem segredo) e aplique as migrations. A API **não** migra o banco sozinha:
+   ```powershell
+   $cs = "Server=localhost,14330;Database=FinTrack;User Id=sa;Password=<MSSQL_SA_PASSWORD>;TrustServerCertificate=True"
+   dotnet ef database update --project src/FinTrack.Infrastructure --startup-project src/FinTrack.Infrastructure --connection $cs
+   ```
+4. Rode a API (`http://localhost:8080` por padrão; em Development o OpenAPI sai em `/openapi/v1.json`):
+   ```powershell
+   $env:ConnectionStrings__FinTrack = $cs
+   dotnet run --project src/FinTrack.Api -c Release
+   ```
+   Health check: `GET /health`.
 
-## Estrutura do pacote
+## Testes e gates
 
-```text
-AGENTS.md
-README.md
-.gitignore
-docs/
-  architecture/
-    clean-architecture.md
-    ADR-0001-clean-architecture-feature-first.md
-    domain-and-requirements.md
-    premises.md
-  contracts/fintrack-openapi.yaml
-  playbooks/FINTRACK_PLAYBOOK_V2.md
-  roadmap/steps.csv
-  traceability/endpoints.csv
-  review/DECISIONS.md
-  templates/{step-report.md,feature-acceptance.md}
-scripts/{validate-step.ps1,check-architecture.ps1,verify-manifest.ps1}
+```powershell
+dotnet build FinTrack.sln -c Release
+dotnet test FinTrack.sln -c Release                          # suíte completa; exige SQL Server do compose e .env
+dotnet test FinTrack.sln -c Release --filter "FullyQualifiedName!~IntegrationTests&FullyQualifiedName!~ContractTests"   # sem banco
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/validate-step.ps1 -StepId <ID>   # gates de um passo do roadmap
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/measure-coverage.ps1             # cobertura (linhas e ramos), sem limite
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-roteiro.ps1                # roteiro das 21 operações (banco descartável)
 ```
 
-**Critério central:** um passo supervisionado, um conjunto de gates reais, um único commit depois do sucesso, e revisão humana antes do passo seguinte (ou parada obrigatória conforme DEC-GOV-006 quando houver autorização em lote). Não afirmar 'testado' ou 'implementado' enquanto não existir execução real.
+Os testes de persistência e de contrato usam SQL Server real e isolado (um banco temporário por classe ou teste); EF InMemory não é usado como substituto.
+
+## Roteiro das 21 operações
+
+`scripts/smoke-roteiro.ps1` executa o roteiro abaixo ponta a ponta e confere os códigos HTTP (requer o SQL Server no ar, `.env` e `dotnet build -c Release`). Exemplos manuais (bash; `{id}` é o `id` devolvido pela criação):
+
+```bash
+B=http://localhost:8080/api/v1
+curl -s -X POST $B/categories -H 'Content-Type: application/json' -d '{"name":"Moradia","nature":"EXPENSE"}'
+curl -s -X POST $B/accounts -H 'Content-Type: application/json' -d '{"categoryId":1,"name":"Aluguel","classifier":"OF"}'
+curl -s -X POST $B/transactions -H 'Content-Type: application/json' -d '{"accountId":1,"amount":1800.00,"realizedAt":"2026-10-05","description":"Aluguel"}'
+curl -s "$B/reports/summary?from=2026-10-01&to=2026-10-31"
+```
+
+| Recurso | Operação | Método e caminho | Sucesso |
+|---|---|---|---|
+| Categorias | createCategory | `POST /categories` | 201 |
+| | listCategories | `GET /categories` | 200 |
+| | getCategory | `GET /categories/{id}` | 200 |
+| | updateCategory | `PATCH /categories/{id}` | 200 |
+| | deleteCategory | `DELETE /categories/{id}` | 204 |
+| Contas | createAccount | `POST /accounts` | 201 |
+| | listAccounts | `GET /accounts` | 200 |
+| | getAccount | `GET /accounts/{id}` | 200 |
+| | updateAccount | `PATCH /accounts/{id}` | 200 |
+| | changeAccountStatus | `PATCH /accounts/{id}/status` (`{"active":false}`) | 200 |
+| | deleteAccount | `DELETE /accounts/{id}` | 204 |
+| Lançamentos | createTransaction | `POST /transactions` | 201 |
+| | listTransactions | `GET /transactions` | 200 |
+| | getTransaction | `GET /transactions/{id}` | 200 |
+| | updateTransaction | `PATCH /transactions/{id}` | 200 |
+| | deleteTransaction | `DELETE /transactions/{id}` | 204 |
+| | listAccountTransactions | `GET /accounts/{id}/transactions` | 200 |
+| Relatórios | getFinancialSummary | `GET /reports/summary?from=&to=` | 200 |
+| | getReportByCategory | `GET /reports/by-category?from=&to=` | 200 |
+| | getReportByAccount | `GET /reports/by-account?from=&to=` | 200 |
+| | getReportByClassifier | `GET /reports/by-classifier?from=&to=` | 200 |
+
+Erros usam `application/problem+json`: **400** sintaxe, tipo, propriedade desconhecida, corpo vazio ou parâmetro de rota/consulta inválido; **404** recurso inexistente; **409** conflito de regra (ex.: excluir categoria com contas, lançar em conta inativa); **422** valor inválido ou propriedade obrigatória ausente (DEC-ERR-005). Datas no formato `YYYY-MM-DD`.
+
+## Estrutura
+
+```text
+src/FinTrack.Api            adapter HTTP (endpoints, Problem Details, Composition Root)
+src/FinTrack.Application    casos de uso (handlers explícitos, sem MediatR), ports e DTOs
+src/FinTrack.Domain         entidades e invariantes (sem dependências)
+src/FinTrack.Infrastructure EF Core/SQL Server, repositórios e migrations
+tests/FinTrack.Tests        unidade, arquitetura, persistência e contrato
+docs/                       playbook, arquitetura, decisões, contrato OpenAPI, roadmap e relatórios por passo
+scripts/                    gates (validate-step, check-architecture, verify-manifest), cobertura, smoke e probe SQL
+```
+
+Dependências: `Api → Application`, `Application → Domain`, `Infrastructure → Application + Domain`; `Api → Infrastructure` somente no Composition Root. Regras de negócio e decisões: [docs/architecture/](docs/architecture) e [docs/review/DECISIONS.md](docs/review/DECISIONS.md).
+
+## Limitações conhecidas
+
+- Sem autenticação/autorização e sem multiusuário.
+- Sem concorrência otimista; verificações de regra (ex.: vínculo antes de excluir) não são serializadas e há janela de corrida.
+- "Hoje" (limite de `realizedAt`) usa o fuso local do servidor; não há decisão formal sobre fuso.
+- Migrations são aplicadas manualmente (`dotnet ef database update`).
+- O CI (`.github/workflows/ci.yml`) está definido, mas ainda não foi executado no GitHub.
+- Cobertura é apenas relatada (DEC-OPS-003); não há limite mínimo.
