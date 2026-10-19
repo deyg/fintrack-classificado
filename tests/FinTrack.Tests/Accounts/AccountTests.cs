@@ -6,6 +6,34 @@ namespace FinTrack.Tests.Accounts;
 
 public sealed class AccountTests
 {
+    [Fact]
+    public void Rename_normaliza_e_rejeita_nome_vazio()
+    {
+        var account = Account.Create(1, "A", CategoryNature.Income, null);
+
+        account.Rename("  B ");
+
+        Assert.Equal("B", account.Name);
+        Assert.Equal("account.name.required", Assert.Throws<DomainException>(() => account.Rename(" ")).Code);
+        Assert.Equal("B", account.Name);
+    }
+
+    [Fact]
+    public void Reclassify_valida_antes_de_alterar_o_estado()
+    {
+        var account = Account.Create(1, "A", CategoryNature.Expense, ExpenseClassifier.OF);
+
+        var ex = Assert.Throws<DomainException>(() => account.Reclassify(2, CategoryNature.Income, ExpenseClassifier.OV));
+
+        Assert.Equal("account.classifier.not_allowed", ex.Code);
+        Assert.Equal(1, account.CategoryId);
+        Assert.Equal(ExpenseClassifier.OF, account.Classifier);
+
+        account.Reclassify(2, CategoryNature.Income, null);
+        Assert.Equal(2, account.CategoryId);
+        Assert.Null(account.Classifier);
+    }
+
     [Theory]
     [InlineData(ExpenseClassifier.OF)]
     [InlineData(ExpenseClassifier.OV)]

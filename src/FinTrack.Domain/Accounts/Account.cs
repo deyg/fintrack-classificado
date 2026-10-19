@@ -45,6 +45,24 @@ public sealed class Account
 
     public void Deactivate() => Active = false;
 
+    public void Rename(string? name) => Name = NormalizeName(name);
+
+    // Valida a coerência entre natureza da categoria e classificador antes de qualquer alteração.
+    public static void EnsureCoherentClassification(CategoryNature nature, ExpenseClassifier? classifier) =>
+        ValidateClassifier(nature, classifier);
+
+    public void Reclassify(int categoryId, CategoryNature nature, ExpenseClassifier? classifier)
+    {
+        if (categoryId < 1)
+        {
+            throw new DomainException("account.category.required", "A conta deve pertencer a uma categoria válida.");
+        }
+
+        var validated = ValidateClassifier(nature, classifier);
+        CategoryId = categoryId;
+        Classifier = validated;
+    }
+
     internal static string NormalizeName(string? name)
     {
         var trimmed = name?.Trim();

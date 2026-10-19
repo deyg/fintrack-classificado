@@ -1,6 +1,7 @@
 using FinTrack.Application.Features.Accounts.CreateAccount;
 using FinTrack.Application.Features.Accounts.GetAccount;
 using FinTrack.Application.Features.Accounts.ListAccounts;
+using FinTrack.Application.Features.Accounts.UpdateAccount;
 using FinTrack.Application.Features.Categories.CreateCategory;
 using FinTrack.Application.Features.Categories.GetCategory;
 using FinTrack.Application.Features.Categories.DeleteCategory;
@@ -26,6 +27,8 @@ public static class DependencyInjection
         services.AddScoped<CreateAccountHandler>();
         services.AddScoped<ListAccountsHandler>();
         services.AddScoped<GetAccountHandler>();
+        services.AddSingleton<IValidator<UpdateAccountCommand>, UpdateAccountValidator>();
+        services.AddScoped<UpdateAccountHandler>();
 
         return services;
     }

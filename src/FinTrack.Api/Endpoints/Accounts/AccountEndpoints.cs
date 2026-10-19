@@ -3,10 +3,34 @@ using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Accounts.CreateAccount;
 using FinTrack.Application.Features.Accounts.GetAccount;
 using FinTrack.Application.Features.Accounts.ListAccounts;
+using FinTrack.Application.Features.Accounts.UpdateAccount;
 
 namespace FinTrack.Api.Endpoints.Accounts;
 
 public sealed record CreateAccountRequest(int? CategoryId, string? Name, string? Classifier);
+
+// O setter só roda quando "classifier" está no JSON, distinguindo null explícito de ausência.
+public sealed class UpdateAccountRequest
+{
+    private string? _classifier;
+
+    public int? CategoryId { get; set; }
+
+    public string? Name { get; set; }
+
+    public string? Classifier
+    {
+        get => _classifier;
+        set
+        {
+            _classifier = value;
+            ClassifierProvided = true;
+        }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool ClassifierProvided { get; private set; }
+}
 
 public static class AccountEndpoints
 {
@@ -31,7 +55,47 @@ public static class AccountEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        accounts.MapPatch("/{id}", UpdateAccountAsync)
+            .WithName("updateAccount")
+            .Produces<AccountResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         return api;
+    }
+
+    private static async Task<IResult> UpdateAccountAsync(
+        int id,
+        UpdateAccountRequest request,
+        HttpContext http,
+        UpdateAccountHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(
+            new UpdateAccountCommand(id, request.CategoryId, request.Name, request.ClassifierProvided, request.Classifier),
+            cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Conta {id} não encontrada.");
+        }
+
+        if (result.IsConflict)
+        {
+            return ProblemResults.Conflict(http, result.ConflictMessage!);
+        }
+
+        if (!result.IsSuccess)
+        {
+            var errors = result.ValidationErrors!;
+            return errors.ContainsKey(UpdateAccountHandler.IdField)
+                ? ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", errors)
+                : ProblemResults.Validation(StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity", errors);
+        }
+
+        return Results.Ok(result.Value);
     }
 
     private static async Task<IResult> GetAccountAsync(

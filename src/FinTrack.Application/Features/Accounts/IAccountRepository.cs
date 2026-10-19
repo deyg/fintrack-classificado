@@ -11,6 +11,9 @@ public interface IAccountRepository
     // Retorna nulo quando a conta não existe.
     Task<Account?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
+    // Persiste alterações de uma conta existente.
+    Task UpdateAsync(Account account, CancellationToken cancellationToken);
+
     // Filtros opcionais combinados com AND; ordenação determinística por Id crescente.
     Task<IReadOnlyList<Account>> ListAsync(
         int? categoryId,

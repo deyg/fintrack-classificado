@@ -14,6 +14,8 @@ public sealed class ListAccountsHandlerTests
 
         public Task<Account?> GetByIdAsync(int id, CancellationToken cancellationToken) => Task.FromResult<Account?>(null);
 
+        public Task UpdateAsync(Account account, CancellationToken cancellationToken) => Task.CompletedTask;
+
         public Task<IReadOnlyList<Account>> ListAsync(
             int? categoryId, bool? active, ExpenseClassifier? classifier, CancellationToken cancellationToken)
         {

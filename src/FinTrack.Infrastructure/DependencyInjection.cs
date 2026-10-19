@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddDbContext<FinTrackDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IAccountHistoryChecker, NoTransactionsHistoryChecker>();
 
         return services;
     }

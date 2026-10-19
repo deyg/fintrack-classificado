@@ -15,6 +15,12 @@ internal sealed class AccountRepository(FinTrackDbContext context) : IAccountRep
     public Task<Account?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         context.Accounts.AsNoTracking().SingleOrDefaultAsync(account => account.Id == id, cancellationToken);
 
+    public async Task UpdateAsync(Account account, CancellationToken cancellationToken)
+    {
+        context.Accounts.Update(account);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Account>> ListAsync(
         int? categoryId,
         bool? active,

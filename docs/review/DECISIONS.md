@@ -31,12 +31,12 @@
 | API-P01 | Renomear categoria com contas ou lançamentos vinculados é **bloqueado com 409**. Sem vínculos, a renomeação é permitida. | Aprovado pelo usuário em 19/10/2026. Vale para `PATCH /categories/{id}` (CAT-007). |
 | DEC-RN-002 (parte categoria) | Alterar a natureza de uma categoria com **qualquer conta vinculada** é bloqueado com 409; sem vínculos, é permitido. | Aprovado pelo usuário em 19/10/2026. A parte de reclassificação de conta (`PATCH /accounts`, ACC-006) segue pendente. |
 | DEC-ORD-007 | Ordem alterada: CAT-007 é executado **depois de ACC-002**, pois a checagem de vínculos exige a entidade Conta. Por coerência (409 com contas), CAT-008 e CAT-009 também seguem ACC-002. Sequência efetiva: ACC-001, ACC-002, CAT-007, CAT-008, CAT-009, ACC-003 em diante. | Aprovado pelo usuário em 19/10/2026 para CAT-007; extensão a CAT-008/CAT-009 por dependência idêntica (decisão registrada aqui, `steps.csv` não foi alterado). |
+| DEC-RN-002 (parte conta) | Em `PATCH /accounts/{id}`: conta **com lançamentos** não pode mudar de categoria nem de classificador (409); só o nome muda. Conta **sem lançamentos** pode mudar categoria e classificador, desde que coerentes (EXPENSE exige classificador, INCOME o proíbe; 422 se incoerente). `active` não é alterado por este endpoint. Enquanto TXN não existe, a checagem usa a porta `IAccountHistoryChecker` com implementação provisória "sem lançamentos", a ser ligada ao banco em TXN. | Aprovado pelo usuário em 19/10/2026, antes de ACC-006. |
 
 ## Deliberações pendentes (não tomar decisão automaticamente)
 
 | ID | Questão | Impacto | Quando decidir |
 |---|---|---|---|
-| DEC-RN-002 (parte conta) | Reclassificação de conta sem histórico em `PATCH /accounts`; proposta conservadora = bloquear alterações que afetem associações/históricos. A parte de categoria está resolvida acima. | `PATCH accounts` | antes de ACC-006 |
 | DEC-OPS-003 | Especificar métricas e limite mínimo de cobertura após medição inicial; sem inventar limiar agora | gate de cobertura | REL-001 |
 | DEC-SDK-004 | Selecionar o patch de SDK .NET 10 presente/instalável para `global.json`, com roll-forward dentro do limite acordado | reproducibilidade do build | BOOT-001 |
 
