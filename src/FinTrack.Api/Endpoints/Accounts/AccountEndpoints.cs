@@ -1,6 +1,7 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Accounts.CreateAccount;
+using FinTrack.Application.Features.Accounts.GetAccount;
 using FinTrack.Application.Features.Accounts.ListAccounts;
 
 namespace FinTrack.Api.Endpoints.Accounts;
@@ -24,7 +25,31 @@ public static class AccountEndpoints
             .Produces<IReadOnlyList<AccountResult>>()
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        accounts.MapGet("/{id}", GetAccountAsync)
+            .WithName("getAccount")
+            .Produces<AccountResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return api;
+    }
+
+    private static async Task<IResult> GetAccountAsync(
+        int id,
+        HttpContext http,
+        GetAccountHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetAccountQuery(id), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return ProblemResults.NotFound(http, $"Conta {id} não encontrada.");
+        }
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", result.ValidationErrors!);
     }
 
     private static async Task<IResult> ListAccountsAsync(
