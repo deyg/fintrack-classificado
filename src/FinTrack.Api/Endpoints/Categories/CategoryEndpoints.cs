@@ -1,5 +1,6 @@
 using FinTrack.Application.Features.Categories;
 using FinTrack.Application.Features.Categories.CreateCategory;
+using FinTrack.Application.Features.Categories.ListCategories;
 
 namespace FinTrack.Api.Endpoints.Categories;
 
@@ -17,7 +18,28 @@ public static class CategoryEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        categories.MapGet("/", ListCategoriesAsync)
+            .WithName("listCategories")
+            .Produces<IReadOnlyList<CategoryResult>>()
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
         return api;
+    }
+
+    private static async Task<IResult> ListCategoriesAsync(
+        string? nature,
+        ListCategoriesHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new ListCategoriesQuery(nature), cancellationToken);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.ValidationProblem(
+                result.ValidationErrors!.ToDictionary(e => e.Key, e => e.Value),
+                title: "Bad Request",
+                type: "https://httpstatuses.com/400",
+                statusCode: StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> CreateCategoryAsync(

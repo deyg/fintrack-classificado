@@ -31,6 +31,9 @@ public sealed class CreateCategoryHandlerTests
             Added.Add(category);
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<Category>> ListAsync(CategoryNature? nature, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Category>>([]);
     }
 
     private static CreateCategoryHandler Handler(FakeRepository repository) =>

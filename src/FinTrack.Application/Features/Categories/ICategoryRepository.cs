@@ -7,4 +7,7 @@ public interface ICategoryRepository
 {
     // Persiste a categoria e atribui o Id gerado.
     Task AddAsync(Category category, CancellationToken cancellationToken);
+
+    // Lista por Id crescente; `nature` nulo significa sem filtro.
+    Task<IReadOnlyList<Category>> ListAsync(CategoryNature? nature, CancellationToken cancellationToken);
 }
