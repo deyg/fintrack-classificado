@@ -14,4 +14,30 @@ internal sealed class AccountRepository(FinTrackDbContext context) : IAccountRep
 
     public Task<Account?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         context.Accounts.AsNoTracking().SingleOrDefaultAsync(account => account.Id == id, cancellationToken);
+
+    public async Task<IReadOnlyList<Account>> ListAsync(
+        int? categoryId,
+        bool? active,
+        ExpenseClassifier? classifier,
+        CancellationToken cancellationToken)
+    {
+        var query = context.Accounts.AsNoTracking();
+
+        if (categoryId is { } category)
+        {
+            query = query.Where(account => account.CategoryId == category);
+        }
+
+        if (active is { } isActive)
+        {
+            query = query.Where(account => account.Active == isActive);
+        }
+
+        if (classifier is { } value)
+        {
+            query = query.Where(account => account.Classifier == value);
+        }
+
+        return await query.OrderBy(account => account.Id).ToListAsync(cancellationToken);
+    }
 }

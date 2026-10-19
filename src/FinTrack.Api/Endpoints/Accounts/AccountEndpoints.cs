@@ -1,6 +1,7 @@
 using FinTrack.Api.Errors;
 using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Accounts.CreateAccount;
+using FinTrack.Application.Features.Accounts.ListAccounts;
 
 namespace FinTrack.Api.Endpoints.Accounts;
 
@@ -18,7 +19,26 @@ public static class AccountEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        accounts.MapGet("/", ListAccountsAsync)
+            .WithName("listAccounts")
+            .Produces<IReadOnlyList<AccountResult>>()
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
         return api;
+    }
+
+    private static async Task<IResult> ListAccountsAsync(
+        int? categoryId,
+        bool? active,
+        string? classifier,
+        ListAccountsHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new ListAccountsQuery(categoryId, active, classifier), cancellationToken);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : ProblemResults.Validation(StatusCodes.Status400BadRequest, "Bad Request", result.ValidationErrors!);
     }
 
     private static async Task<IResult> CreateAccountAsync(
