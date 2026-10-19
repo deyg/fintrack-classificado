@@ -1,3 +1,4 @@
+using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Categories;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ public static class DependencyInjection
     {
         services.AddDbContext<FinTrackDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
 
         return services;
     }

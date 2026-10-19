@@ -21,6 +21,38 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FinTrack.Domain.Accounts.Account", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Classifier")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Accounts_Classifier", "[Classifier] IS NULL OR [Classifier] IN (1, 2, 3, 4)");
+                        });
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Categories.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -43,6 +75,15 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_Categories_Nature", "[Nature] IN (1, 2)");
                         });
+                });
+
+            modelBuilder.Entity("FinTrack.Domain.Accounts.Account", b =>
+                {
+                    b.HasOne("FinTrack.Domain.Categories.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

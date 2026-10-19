@@ -32,7 +32,7 @@ public sealed class CategoryPersistenceIntegrationTests(SqlServerDatabaseFixture
 
         await using var context = database.CreateContext();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
-        Assert.Single(await context.Database.GetAppliedMigrationsAsync());
+        Assert.Equal(context.Database.GetMigrations().Count(), (await context.Database.GetAppliedMigrationsAsync()).Count());
     }
 
     [Theory]
