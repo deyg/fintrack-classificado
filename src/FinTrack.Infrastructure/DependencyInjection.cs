@@ -1,5 +1,6 @@
 using FinTrack.Application.Features.Accounts;
 using FinTrack.Application.Features.Categories;
+using FinTrack.Application.Features.Reports;
 using FinTrack.Application.Features.Transactions;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IAccountHistoryChecker, TransactionHistoryChecker>();
+        services.AddScoped<IReadReportRepository, ReadReportRepository>();
 
         return services;
     }
