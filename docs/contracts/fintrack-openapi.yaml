@@ -1,0 +1,1240 @@
+openapi: 3.1.0
+info:
+  title: FinTrack API
+  version: 1.0.0
+  summary: Gestão de receitas e despesas pessoais realizadas.
+  description: 'Contrato API Design First para o MVP FinTrack. Receitas e despesas usam contas reutilizáveis
+    agrupadas por categorias. A natureza da movimentação provém da categoria da conta, e o classificador OF/OV/NOF/NOV
+    fica na conta de despesa. Valores de lançamento são positivos e apenas realizados; resultados agregados
+    são calculados. Sem autenticação ou orçamentos nesta versão. Padrão de datas: ISO 8601 (YYYY-MM-DD); limites
+    dos filtros de período inclusivos. Nomenclatura externa: INCOME=RECEITA, EXPENSE=DESPESA. Erros seguem
+    Problem Details (RFC 9457).'
+servers:
+- url: http://localhost:8080/api/v1
+  description: Ambiente local (porta configurável).
+tags:
+- name: Categories
+  description: Agrupadores financeiros e natureza da movimentação.
+- name: Accounts
+  description: Contas reutilizáveis e classificação das despesas.
+- name: Transactions
+  description: Lançamentos financeiros efetivamente realizados.
+- name: Reports
+  description: Consolidações por período, categoria, conta e classificação.
+paths:
+  /categories:
+    get:
+      tags:
+      - Categories
+      summary: Listar categorias
+      operationId: listCategories
+      parameters:
+      - name: nature
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/CategoryNature'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+        '400':
+          $ref: '#/components/responses/Error400'
+    post:
+      tags:
+      - Categories
+      summary: Cadastrar categoria
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: Recurso criado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          headers:
+            Location:
+              description: URL relativa do recurso criado.
+              schema:
+                type: string
+              example: /api/v1/categories/1
+        '400':
+          $ref: '#/components/responses/Error400'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /categories/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Identificador do recurso.
+    get:
+      tags:
+      - Categories
+      summary: Consultar categoria
+      operationId: getCategory
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+    patch:
+      tags:
+      - Categories
+      summary: Alterar categoria
+      operationId: updateCategory
+      description: Mudança de natureza que altere o significado de contas ou históricos vinculados deve ser
+        rejeitada com 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+    delete:
+      tags:
+      - Categories
+      summary: Excluir categoria
+      operationId: deleteCategory
+      description: Permitido somente quando não houver contas vinculadas.
+      responses:
+        '204':
+          description: Operação realizada com sucesso, sem corpo de resposta.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+  /accounts:
+    get:
+      tags:
+      - Accounts
+      summary: Listar contas
+      operationId: listAccounts
+      parameters:
+      - name: categoryId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+      - name: active
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: classifier
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/ExpenseClassifier'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountList'
+        '400':
+          $ref: '#/components/responses/Error400'
+    post:
+      tags:
+      - Accounts
+      summary: Cadastrar conta
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Recurso criado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          headers:
+            Location:
+              description: URL relativa do recurso criado.
+              schema:
+                type: string
+              example: /api/v1/accounts/12
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /accounts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Identificador do recurso.
+    get:
+      tags:
+      - Accounts
+      summary: Consultar conta
+      operationId: getAccount
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+    patch:
+      tags:
+      - Accounts
+      summary: Alterar conta
+      operationId: updateAccount
+      description: Alterações de categoria e classificador que mudem o significado do histórico devem ser rejeitadas
+        com 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+    delete:
+      tags:
+      - Accounts
+      summary: Excluir conta
+      operationId: deleteAccount
+      description: Permitido somente quando não houver lançamentos vinculados.
+      responses:
+        '204':
+          description: Operação realizada com sucesso, sem corpo de resposta.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+  /accounts/{id}/status:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Identificador do recurso.
+    patch:
+      tags:
+      - Accounts
+      summary: Ativar ou desativar conta
+      operationId: changeAccountStatus
+      description: Contas inativas mantêm o histórico, mas não aceitam novos lançamentos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeAccountStatusRequest'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /accounts/{id}/transactions:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Identificador do recurso.
+    get:
+      tags:
+      - Accounts
+      summary: Consultar lançamentos de uma conta
+      operationId: listAccountTransactions
+      description: Resultados ordenados por realizedAt decrescente e, em caso de empate, id decrescente.
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data inicial inclusiva.
+        example: '2026-10-01'
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data final inclusiva; deve ser >= from quando ambas forem informadas.
+        example: '2026-10-31'
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+        description: Número da página, a partir de 1.
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        description: Registros por página (máximo 100).
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPage'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /transactions:
+    get:
+      tags:
+      - Transactions
+      summary: Consultar histórico de lançamentos
+      operationId: listTransactions
+      description: Resultados ordenados por realizedAt decrescente e id decrescente. Os filtros são combinados
+        por AND.
+      parameters:
+      - name: accountId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+      - name: categoryId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+      - name: nature
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/CategoryNature'
+      - name: classifier
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/ExpenseClassifier'
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data inicial inclusiva.
+        example: '2026-10-01'
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data final inclusiva; deve ser >= from quando ambas forem informadas.
+        example: '2026-10-31'
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+        description: Número da página, a partir de 1.
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        description: Registros por página (máximo 100).
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPage'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
+    post:
+      tags:
+      - Transactions
+      summary: Registrar lançamento realizado
+      operationId: createTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Recurso criado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          headers:
+            Location:
+              description: URL relativa do recurso criado.
+              schema:
+                type: string
+              example: /api/v1/transactions/22
+        '400':
+          $ref: '#/components/responses/Error400'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /transactions/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Identificador do recurso.
+    get:
+      tags:
+      - Transactions
+      summary: Consultar lançamento
+      operationId: getTransaction
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+    patch:
+      tags:
+      - Transactions
+      summary: Corrigir lançamento
+      operationId: updateTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+    delete:
+      tags:
+      - Transactions
+      summary: Excluir lançamento incorreto
+      operationId: deleteTransaction
+      responses:
+        '204':
+          description: Operação realizada com sucesso, sem corpo de resposta.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+  /reports/summary:
+    get:
+      tags:
+      - Reports
+      summary: Obter receitas, despesas e resultado
+      operationId: getFinancialSummary
+      description: Período inclusivo. Totais calculados exclusivamente sobre lançamentos realizados.
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data inicial inclusiva.
+        example: '2026-10-01'
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data final inclusiva; deve ser >= from.
+        example: '2026-10-31'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummaryReport'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /reports/by-category:
+    get:
+      tags:
+      - Reports
+      summary: Consolidar lançamentos por categoria
+      operationId: getReportByCategory
+      description: Período inclusivo. Totais calculados exclusivamente sobre lançamentos realizados.
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data inicial inclusiva.
+        example: '2026-10-01'
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data final inclusiva; deve ser >= from.
+        example: '2026-10-31'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ByCategoryReport'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /reports/by-account:
+    get:
+      tags:
+      - Reports
+      summary: Consolidar lançamentos por conta
+      operationId: getReportByAccount
+      description: Período inclusivo. Totais calculados exclusivamente sobre lançamentos realizados.
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data inicial inclusiva.
+        example: '2026-10-01'
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data final inclusiva; deve ser >= from.
+        example: '2026-10-31'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ByAccountReport'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
+  /reports/by-classifier:
+    get:
+      tags:
+      - Reports
+      summary: Consolidar despesas por OF, OV, NOF e NOV
+      operationId: getReportByClassifier
+      description: Período inclusivo. Totais calculados exclusivamente sobre lançamentos realizados.
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data inicial inclusiva.
+        example: '2026-10-01'
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description: Data final inclusiva; deve ser >= from.
+        example: '2026-10-31'
+      responses:
+        '200':
+          description: Operação bem-sucedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ByClassifierReport'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
+components:
+  schemas:
+    CategoryNature:
+      type: string
+      enum:
+      - INCOME
+      - EXPENSE
+      description: INCOME = RECEITA; EXPENSE = DESPESA. O domínio pode usar nomes em português internamente.
+    ExpenseClassifier:
+      type: string
+      enum:
+      - OF
+      - OV
+      - NOF
+      - NOV
+      description: OF=obrigatória fixa; OV=obrigatória variável; NOF=não obrigatória fixa; NOV=não obrigatória
+        variável.
+    Category:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - nature
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        nature:
+          $ref: '#/components/schemas/CategoryNature'
+      example:
+        id: 3
+        name: Moradia
+        nature: EXPENSE
+    CreateCategoryRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - nature
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        nature:
+          $ref: '#/components/schemas/CategoryNature'
+      example:
+        name: Moradia
+        nature: EXPENSE
+    UpdateCategoryRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        nature:
+          $ref: '#/components/schemas/CategoryNature'
+      description: Modificação da natureza pode ser rejeitada (409) caso afete contas ou histórico associado.
+    Account:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - categoryId
+      - name
+      - classifier
+      - active
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 1
+        categoryId:
+          type: integer
+          format: int32
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        classifier:
+          anyOf:
+          - $ref: '#/components/schemas/ExpenseClassifier'
+          - type: 'null'
+          description: Obrigatório para despesas; nulo em receitas. A validade depende da natureza da categoria
+            selecionada.
+        active:
+          type: boolean
+      example:
+        id: 12
+        categoryId: 3
+        name: Aluguel
+        classifier: OF
+        active: true
+    CreateAccountRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - categoryId
+      - name
+      properties:
+        categoryId:
+          type: integer
+          format: int32
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        classifier:
+          anyOf:
+          - $ref: '#/components/schemas/ExpenseClassifier'
+          - type: 'null'
+          description: Obrigatório para despesas; nulo em receitas. A validade depende da natureza da categoria
+            selecionada.
+      description: Se categoryId referenciar categoria EXPENSE, classifier é obrigatório e não pode ser nulo.
+        Se INCOME, classifier deve ser omitido ou nulo.
+      example:
+        categoryId: 3
+        name: Aluguel
+        classifier: OF
+    UpdateAccountRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        categoryId:
+          type: integer
+          format: int32
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        classifier:
+          anyOf:
+          - $ref: '#/components/schemas/ExpenseClassifier'
+          - type: 'null'
+          description: Obrigatório para despesas; nulo em receitas. A validade depende da natureza da categoria
+            selecionada.
+      description: Não altera active. Mudanças de categoria/classificador que reinterpretam lançamentos existentes
+        são bloqueadas (409).
+    ChangeAccountStatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - active
+      properties:
+        active:
+          type: boolean
+      example:
+        active: false
+    Transaction:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - accountId
+      - amount
+      - realizedAt
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 1
+        accountId:
+          type: integer
+          format: int32
+          minimum: 1
+        amount:
+          type: number
+          minimum: 0.01
+          multipleOf: 0.01
+          description: Valor monetário positivo com até duas casas decimais; no .NET usar decimal e no SQL
+            Server decimal(18,2).
+          example: 1800.0
+        realizedAt:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+      example:
+        id: 22
+        accountId: 12
+        amount: 1800
+        realizedAt: '2026-10-06'
+        description: Aluguel de outubro
+    CreateTransactionRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - accountId
+      - amount
+      - realizedAt
+      properties:
+        accountId:
+          type: integer
+          format: int32
+          minimum: 1
+        amount:
+          type: number
+          minimum: 0.01
+          multipleOf: 0.01
+          description: Valor monetário positivo com até duas casas decimais; no .NET usar decimal e no SQL
+            Server decimal(18,2).
+          example: 1800.0
+        realizedAt:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+      description: Somente operações efetivamente realizadas podem ser registradas. realizedAt não pode estar
+        no futuro e a conta deve estar ativa.
+      example:
+        accountId: 12
+        amount: 1800
+        realizedAt: '2026-10-06'
+        description: Aluguel de outubro
+    UpdateTransactionRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        accountId:
+          type: integer
+          format: int32
+          minimum: 1
+        amount:
+          type: number
+          minimum: 0.01
+          multipleOf: 0.01
+          description: Valor monetário positivo com até duas casas decimais; no .NET usar decimal e no SQL
+            Server decimal(18,2).
+          example: 1800.0
+        realizedAt:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+      description: Corrige lançamento realizado. Se accountId for alterado, a nova conta deve existir e estar
+        ativa. realizedAt não pode ser futuro.
+    PaginationMeta:
+      type: object
+      additionalProperties: false
+      required:
+      - page
+      - pageSize
+      - totalItems
+      - totalPages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    TransactionPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    Period:
+      type: object
+      additionalProperties: false
+      required:
+      - from
+      - to
+      properties:
+        from:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+        to:
+          type: string
+          format: date
+          description: Data civil no formato ISO 8601 (YYYY-MM-DD).
+      example:
+        from: '2026-10-01'
+        to: '2026-10-31'
+    SummaryReport:
+      type: object
+      additionalProperties: false
+      required:
+      - period
+      - income
+      - expenses
+      - balance
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        income:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+        expenses:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+        balance:
+          type: number
+          multipleOf: 0.01
+      description: balance = income - expenses. Valores agregados são calculados, nunca armazenados como saldo
+        redundante.
+      example:
+        period:
+          from: '2026-10-01'
+          to: '2026-10-31'
+        income: 6200
+        expenses: 2669.9
+        balance: 3530.1
+    CategoryReportItem:
+      type: object
+      additionalProperties: false
+      required:
+      - categoryId
+      - categoryName
+      - nature
+      - total
+      - transactionCount
+      properties:
+        categoryId:
+          type: integer
+          format: int32
+          minimum: 1
+        categoryName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        nature:
+          $ref: '#/components/schemas/CategoryNature'
+        total:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+        transactionCount:
+          type: integer
+          minimum: 0
+    ByCategoryReport:
+      type: object
+      additionalProperties: false
+      required:
+      - period
+      - items
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryReportItem'
+    AccountReportItem:
+      type: object
+      additionalProperties: false
+      required:
+      - accountId
+      - accountName
+      - categoryId
+      - nature
+      - classifier
+      - total
+      - transactionCount
+      properties:
+        accountId:
+          type: integer
+          format: int32
+          minimum: 1
+        accountName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome sem espaços em branco nas extremidades.
+        categoryId:
+          type: integer
+          format: int32
+          minimum: 1
+        nature:
+          $ref: '#/components/schemas/CategoryNature'
+        classifier:
+          anyOf:
+          - $ref: '#/components/schemas/ExpenseClassifier'
+          - type: 'null'
+          description: Obrigatório para despesas; nulo em receitas. A validade depende da natureza da categoria
+            selecionada.
+        total:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+        transactionCount:
+          type: integer
+          minimum: 0
+    ByAccountReport:
+      type: object
+      additionalProperties: false
+      required:
+      - period
+      - items
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountReportItem'
+    ClassifierReportItem:
+      type: object
+      additionalProperties: false
+      required:
+      - classifier
+      - total
+      - transactionCount
+      properties:
+        classifier:
+          $ref: '#/components/schemas/ExpenseClassifier'
+        total:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+        transactionCount:
+          type: integer
+          minimum: 0
+    ByClassifierReport:
+      type: object
+      additionalProperties: false
+      required:
+      - period
+      - items
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassifierReportItem'
+      description: Contabiliza exclusivamente lançamentos de despesas.
+    ProblemDetails:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          description: Identificador estável do tipo de problema.
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: object
+          description: Erros por campo para falhas de validação (extensão RFC 9457).
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      example:
+        type: https://httpstatuses.com/422
+        title: Unprocessable Content
+        status: 422
+        detail: A data do lançamento não pode estar no futuro.
+        instance: /api/v1/transactions
+    CategoryList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Category'
+    AccountList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Account'
+  responses:
+    Error400:
+      description: Sintaxe da requisição ou parâmetros de consulta inválidos.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Error404:
+      description: Recurso não encontrado.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Error409:
+      description: Conflito com referências existentes, histórico ou outra regra de domínio.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Error422:
+      description: Valores da requisição semanticamente inválidos.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'

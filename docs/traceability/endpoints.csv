@@ -1,0 +1,22 @@
+operationId,method,path,feature,step_id,rf_rn,contract,status
+createCategory,POST,/api/v1/categories,CAT,CAT-004,RF01; RF02; RN01,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+listCategories,GET,/api/v1/categories,CAT,CAT-005,RF01; RF02,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getCategory,GET,/api/v1/categories/{id},CAT,CAT-006,RF01,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+updateCategory,PATCH,/api/v1/categories/{id},CAT,CAT-007,RF01; RN11; API-P01,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+deleteCategory,DELETE,/api/v1/categories/{id},CAT,CAT-008,RF01; RN10,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+createAccount,POST,/api/v1/accounts,ACC,ACC-003,RF03; RF04; RN02; RN03; RN04,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+listAccounts,GET,/api/v1/accounts,ACC,ACC-004,RF03,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getAccount,GET,/api/v1/accounts/{id},ACC,ACC-005,RF03,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+updateAccount,PATCH,/api/v1/accounts/{id},ACC,ACC-006,RF03; RF04; RN11,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+changeAccountStatus,PATCH,/api/v1/accounts/{id}/status,ACC,ACC-007,RF14; RN09,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+deleteAccount,DELETE,/api/v1/accounts/{id},ACC,ACC-008,RF03; RN10,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+createTransaction,POST,/api/v1/transactions,TXN,TXN-003,RF06; RF07; RN05..09,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+listTransactions,GET,/api/v1/transactions,TXN,TXN-004,RF09; RN08,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getTransaction,GET,/api/v1/transactions/{id},TXN,TXN-005,RF09,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+updateTransaction,PATCH,/api/v1/transactions/{id},TXN,TXN-006,RF08; RN06; RN07; RN09,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+deleteTransaction,DELETE,/api/v1/transactions/{id},TXN,TXN-007,RF08; RN12,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+listAccountTransactions,GET,/api/v1/accounts/{id}/transactions,TXN,TXN-008,RF09; RN09,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getFinancialSummary,GET,/api/v1/reports/summary,REP,REP-002,RF12; RN08; RN12,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getReportByCategory,GET,/api/v1/reports/by-category,REP,REP-003,RF11; RN12,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getReportByAccount,GET,/api/v1/reports/by-account,REP,REP-004,RF10; RN12,docs/contracts/fintrack-openapi.yaml,PLANEJADO
+getReportByClassifier,GET,/api/v1/reports/by-classifier,REP,REP-005,RF13; RN03; RN04; RN12,docs/contracts/fintrack-openapi.yaml,PLANEJADO

@@ -1,0 +1,24 @@
+# .NET
+bin/
+obj/
+**/TestResults/
+*.user
+*.suo
+.vs/
+# IDE
+.vscode/*.log
+.idea/
+# local infrastructure and credentials
+.env
+.env.*
+!.env.example
+appsettings.Development.local.json
+**/secrets.json
+*.pfx
+*.key
+# local logs and generated reports
+artifacts/
+*.trx
+coverage/
+**/coverage.cobertura.xml
+*.log
