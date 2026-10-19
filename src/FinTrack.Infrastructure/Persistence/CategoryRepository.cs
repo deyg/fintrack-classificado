@@ -22,4 +22,7 @@ internal sealed class CategoryRepository(FinTrackDbContext context) : ICategoryR
 
         return await query.OrderBy(category => category.Id).ToListAsync(cancellationToken);
     }
+
+    public Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+        context.Categories.AsNoTracking().SingleOrDefaultAsync(category => category.Id == id, cancellationToken);
 }

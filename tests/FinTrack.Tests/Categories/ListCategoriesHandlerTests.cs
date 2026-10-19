@@ -22,6 +22,9 @@ public sealed class ListCategoriesHandlerTests
             return Task.FromResult<IReadOnlyList<Category>>(
                 stored.Where(c => nature is null || c.Nature == nature).ToList());
         }
+
+        public Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult<Category?>(null);
     }
 
     private static Category Stored(int id, string name, CategoryNature nature)

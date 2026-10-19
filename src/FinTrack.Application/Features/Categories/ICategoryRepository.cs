@@ -10,4 +10,7 @@ public interface ICategoryRepository
 
     // Lista por Id crescente; `nature` nulo significa sem filtro.
     Task<IReadOnlyList<Category>> ListAsync(CategoryNature? nature, CancellationToken cancellationToken);
+
+    // Retorna nulo quando a categoria não existe.
+    Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken);
 }

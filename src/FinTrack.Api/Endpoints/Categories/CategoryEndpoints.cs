@@ -1,5 +1,6 @@
 using FinTrack.Application.Features.Categories;
 using FinTrack.Application.Features.Categories.CreateCategory;
+using FinTrack.Application.Features.Categories.GetCategory;
 using FinTrack.Application.Features.Categories.ListCategories;
 
 namespace FinTrack.Api.Endpoints.Categories;
@@ -23,7 +24,40 @@ public static class CategoryEndpoints
             .Produces<IReadOnlyList<CategoryResult>>()
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        categories.MapGet("/{id}", GetCategoryAsync)
+            .WithName("getCategory")
+            .Produces<CategoryResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return api;
+    }
+
+    private static async Task<IResult> GetCategoryAsync(
+        int id,
+        HttpContext http,
+        GetCategoryHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetCategoryQuery(id), cancellationToken);
+
+        if (result.IsNotFound)
+        {
+            return Results.Problem(
+                title: "Not Found",
+                detail: $"Categoria {id} não encontrada.",
+                type: "https://httpstatuses.com/404",
+                instance: http.Request.Path,
+                statusCode: StatusCodes.Status404NotFound);
+        }
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.ValidationProblem(
+                result.ValidationErrors!.ToDictionary(e => e.Key, e => e.Value),
+                title: "Bad Request",
+                type: "https://httpstatuses.com/400",
+                statusCode: StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> ListCategoriesAsync(
